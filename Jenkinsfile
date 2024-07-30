@@ -17,8 +17,8 @@ pipeline {
             }
         }
         stage("deploy") {
-            script {
-                steps {
+            steps {
+                script {
                     echo "Deploy to aws ec2 ..."
                     sshagent(['ec2-server-key']) {
                         def dockerRunCMD = "docker run -d -p 3080:3080 dinhuy975/demo-node-app:1.2"

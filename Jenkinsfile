@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    enviroment {
+    environment {
         IMAGE_NAME = 'demo-node-app'
         IMAGE_VER = '2.2'
         AWS_REGION = 'ap-southeast-1'

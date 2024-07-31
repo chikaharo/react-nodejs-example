@@ -1,5 +1,11 @@
 pipeline {
     agent any
+    enviroment {
+        IMAGE_NAME = 'demo-node-app'
+        IMAGE_VER = '2.2'
+        AWS_REGION = 'ap-southeast-1'
+        AWS_URL = "010438465474.dkr.ecr.${AWS_REGION}.amazonaws.com"
+    }
     stages {
         stage("init") {
             steps {
@@ -12,7 +18,7 @@ pipeline {
             steps {
                 script {
                     echo "Building app with docker ..."
-                    sh "docker build -t demo-node-app:2.0 ."
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_VER} ."
                    
                 }
             }
@@ -21,9 +27,9 @@ pipeline {
             steps {
                 script {
                      withCredentials([usernamePassword(credentialsId: 'aws-root', usernameVariable: "AWS_ACCESS_KEY_ID", passwordVariable: "AWS_SECRET_ACCESS_KEY")]) {
-                        sh "aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 010438465474.dkr.ecr.ap-southeast-1.amazonaws.com"
-                        sh "docker tag demo-node-app:2.0 010438465474.dkr.ecr.ap-southeast-1.amazonaws.com/demo-node-app:2.0"
-                        sh "docker push 010438465474.dkr.ecr.ap-southeast-1.amazonaws.com/demo-node-app:2.0"
+                        sh "aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_URL}"
+                        sh "docker tag ${IMAGE_NAME}:${IMAGE_VER} ${AWS_URL}/${IMAGE_NAME}:${IMAGE_VER}"
+                        sh "docker push ${AWS_URL}/${IMAGE_NAME}:${IMAGE_VER}"
                     }
                 }
             }
@@ -34,7 +40,7 @@ pipeline {
                     echo "Deploy to aws ec2 ..."
                     sshagent(['ec2-server-key']) {
                         withCredentials([usernamePassword(credentialsId: 'aws-root', usernameVariable: "AWS_ACCESS_KEY_ID", passwordVariable: "AWS_SECRET_ACCESS_KEY")]) {
-                            def dockerRunCMD = "docker pull 010438465474.dkr.ecr.ap-southeast-1.amazonaws.com/demo-node-app:2.0 && docker run -d -p 3080:3080 010438465474.dkr.ecr.ap-southeast-1.amazonaws.com/demo-node-app:2.0"
+                            def dockerRunCMD = "docker pull ${AWS_URL}/${IMAGE_NAME}:${IMAGE_VER} && docker run -d -p 3080:3080 ${AWS_URL}/${IMAGE_NAME}:${IMAGE_VER}"
                             sh "ssh -o StrictHostKeyChecking=no ec2-user@18.142.237.73 ${dockerRunCMD}"
                         }
                     }
